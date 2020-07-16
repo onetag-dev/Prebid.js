@@ -62,14 +62,15 @@ function buildRequests(validBidRequests, bidderRequest) {
   if (bidderRequest && bidderRequest.userId) {
     payload.userId = bidderRequest.userId;
   }
-  if (window.localStorage) {
-    payload.onetagSid = window.localStorage.getItem('onetag_sid');
-  }
-  const payloadString = JSON.stringify(payload);
+  try {
+    if (window.localStorage) {
+      payload.onetagSid = window.localStorage.getItem('onetag_sid');
+    }
+  } catch (e) {}
   return {
     method: 'POST',
     url: ENDPOINT,
-    data: payloadString
+    data: JSON.stringify(payload)
   }
 }
 
@@ -162,15 +163,17 @@ function onetagRenderer({renderer, width, height, vastXml, adUnitCode}) {
 
 function getFrameNesting() {
   let topmostFrame = window;
+  let parent = window.parent;
   let currentFrameNesting = 0;
   try {
-    while (topmostFrame !== topmostFrame.top) {
+    while (topmostFrame !== topmostFrame.parent) {
+      parent = topmostFrame.parent;
       // eslint-disable-next-line no-unused-expressions
-      topmostFrame.location.href;
+      parent.location.href;
       topmostFrame = topmostFrame.parent;
     }
   } catch (e) {
-    currentFrameNesting = topmostFrame.parent === topmostFrame.top ? 1 : 2;
+    currentFrameNesting = parent === topmostFrame.top ? 1 : 2;
   }
   return {
     topmostFrame,
@@ -201,8 +204,11 @@ function getDocumentVisibility(window) {
 function getPageInfo() {
   const { topmostFrame, currentFrameNesting } = getFrameNesting();
   return {
-    location: encodeURIComponent(topmostFrame.location.href),
-    referrer: encodeURIComponent(topmostFrame.document.referrer) || '0',
+    location: topmostFrame.location.href,
+    referrer:
+      topmostFrame.document.referrer !== ''
+        ? topmostFrame.document.referrer
+        : null,
     masked: currentFrameNesting,
     wWidth: topmostFrame.innerWidth,
     wHeight: topmostFrame.innerHeight,
@@ -263,6 +269,7 @@ function setGeneralInfo(bidRequest) {
   this['auctionId'] = bidRequest.auctionId;
   this['transactionId'] = bidRequest.transactionId;
   this['pubId'] = params.pubId;
+  this['ext'] = params.ext;
   if (params.pubClick) {
     this['click'] = params.pubClick;
   }
