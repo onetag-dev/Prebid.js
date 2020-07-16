@@ -161,17 +161,20 @@ function onetagRenderer({renderer, width, height, vastXml, adUnitCode}) {
 }
 
 function getFrameNesting() {
-  let frame = window;
+  let topmostFrame = window;
+  let currentFrameNesting = 0;
   try {
-    while (frame !== frame.top) {
+    while (topmostFrame !== topmostFrame.top) {
       // eslint-disable-next-line no-unused-expressions
-      frame.location.href;
-      frame = frame.parent;
+      topmostFrame.location.href;
+      topmostFrame = topmostFrame.parent;
     }
-  } catch (e) {}
+  } catch (e) {
+    currentFrameNesting = topmostFrame.parent === topmostFrame.top ? 1 : 2;
+  }
   return {
-    topmostFrame: frame,
-    currentFrameNesting: frame.top === frame ? 1 : 2
+    topmostFrame,
+    currentFrameNesting
   }
 }
 
