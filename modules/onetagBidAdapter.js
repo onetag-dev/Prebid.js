@@ -219,7 +219,11 @@ function getPageInfo() {
     docHidden: getDocumentVisibility(topmostFrame),
     docHeight: topmostFrame.document.body ? topmostFrame.document.body.scrollHeight : null,
     hLength: history.length,
-    timing: getTiming()
+    timing: getTiming(),
+    version: {
+      prebid: '$prebid.version$',
+      adapter: '0.0.1'
+    }
   };
 }
 
