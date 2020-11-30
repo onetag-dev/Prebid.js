@@ -151,7 +151,6 @@ function createRenderer(bid, rendererOptions = {}) {
   return renderer;
 }
 
-
 function getFrameNesting() {
   let topmostFrame = window;
   let parent = window.parent;
