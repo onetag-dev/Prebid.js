@@ -6,6 +6,7 @@ import { Renderer } from '../src/Renderer.js';
 import find from 'core-js-pure/features/array/find.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { createEidsArray } from './userId/eids.js';
 
 const ENDPOINT = 'https://onetag-sys.com/prebid-request';
 const USER_SYNC_ENDPOINT = 'https://onetag-sys.com/usync/';
@@ -63,8 +64,8 @@ function buildRequests(validBidRequests, bidderRequest) {
   if (bidderRequest && bidderRequest.uspConsent) {
     payload.usPrivacy = bidderRequest.uspConsent;
   }
-  if (bidderRequest && bidderRequest.userId) {
-    payload.userId = bidderRequest.userId;
+  if (validBidRequests && validBidRequests.length !== 0 && validBidRequests[0].userId) {
+    payload.userId = createEidsArray(validBidRequests[0].userId);
   }
   try {
     if (storage.hasLocalStorage()) {
