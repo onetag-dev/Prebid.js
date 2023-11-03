@@ -9,6 +9,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { deepClone, logError, deepAccess } from '../src/utils.js';
 
 const ENDPOINT = 'https://onetag-sys.com/prebid-request';
+const FLEDGE_ENDPOINT = 'https://onetag-sys.com/fledge-request';
 const USER_SYNC_ENDPOINT = 'https://onetag-sys.com/usync/';
 const BIDDER_CODE = 'onetag';
 const GVLID = 241;
@@ -87,9 +88,18 @@ function buildRequests(validBidRequests, bidderRequest) {
   const connection = navigator.connection || navigator.webkitConnection;
   payload.networkConnectionType = (connection && connection.type) ? connection.type : null;
   payload.networkEffectiveConnectionType = (connection && connection.effectiveType) ? connection.effectiveType : null;
+
+  let computedEndpoint = ENDPOINT
+  payload.fledgeEnabled = false
+
+  if (bidderRequest.fledgeEnabled) {
+    payload.fledgeEnabled = true;
+    computedEndpoint = FLEDGE_ENDPOINT;
+  }
+
   return {
     method: 'POST',
-    url: ENDPOINT,
+    url: computedEndpoint,
     data: JSON.stringify(payload)
   }
 }
@@ -101,7 +111,7 @@ function interpretResponse(serverResponse, bidderRequest) {
   if (!body || (body.nobid && body.nobid === true)) {
     return bids;
   }
-  if (!body.bids || !Array.isArray(body.bids) || body.bids.length === 0) {
+  if (!body.fledgeAuctionConfigs && (!body.bids || !Array.isArray(body.bids) || body.bids.length === 0)) {
     return bids;
   }
   body.bids.forEach(bid => {
@@ -141,7 +151,16 @@ function interpretResponse(serverResponse, bidderRequest) {
     }
     bids.push(responseBid);
   });
-  return bids;
+
+  if (body.fledgeAuctionConfigs) {
+    const fledgeAuctionConfigs = body.fledgeAuctionConfigs
+    return {
+      bids,
+      fledgeAuctionConfigs,
+    }
+  } else {
+    return bids;
+  }
 }
 
 function createRenderer(bid, rendererOptions = {}) {
